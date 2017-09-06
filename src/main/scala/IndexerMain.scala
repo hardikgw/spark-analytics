@@ -1,5 +1,7 @@
 package main.scala
 
+import org.apache.spark.sql.Row
+import org.apache.spark.sql.types._
 import org.apache.spark.{SparkConf, SparkContext}
 import org.graphframes._
 
@@ -9,20 +11,36 @@ object IndexerMain {
     //Create a SparkContext to initialize Spark
     val conf = new SparkConf()
     conf.setMaster("local")
-    conf.setAppName("Word Count")
+    conf.setAppName("YAGO_Indexer")
+
     val sc = new SparkContext(conf)
+//    val ss = new SparkSession(sc)
+    val in = readRdfDf(sc, "src/main/resources/yagoFactInfluence.tsv")
 
-    // Load the text into a Spark RDD, which is a distributed representation of each line of text
-    val textFile = sc.textFile("src/main/resources/shakespeare.txt")
+  }
 
-    //word count
-    val counts = textFile.flatMap(line => line.split(" "))
-      .map(word => (word, 1))
-      .reduceByKey(_ + _)
+  def readRdfDf(sc:org.apache.spark.SparkContext, filename:String) = {
+    val r = sc.textFile(filename).map(_.split("\t"))
+    val v = r.map(_(1)).union(r.map(_(3))).distinct.zipWithIndex.map(
 
-    counts.foreach(println)
-    System.out.println("Total words: " + counts.count());
-    counts.saveAsTextFile("/tmp/shakespeareWordCount");
+      x => Row(x._2,x._1))
+    // We must have an "id" column in the vertices DataFrame;
+    // everything else is just properties we assign to the vertices
+    val stv = StructType(StructField("id",LongType) ::
+      StructField("attr",StringType) :: Nil)
+    val sqlContext = new org.apache.spark.sql.SQLContext(sc)
+    val vdf = sqlContext.createDataFrame(v,stv)
+    vdf.registerTempTable("v")
+    val str = StructType(StructField("rdfId",StringType) ::
+      StructField("subject",StringType) ::
+      StructField("predicate",StringType) ::
+      StructField("object",StringType) :: Nil)
+    sqlContext.createDataFrame(r.map(Row.fromSeq(_)),str)
+      .registerTempTable("r")
+    // We must have an "src" and "dst" columns in the edges DataFrame;
+    // everything else is just properties we assign to the edges
+    val edf = sqlContext.sql("SELECT vsubject.id AS src, vobject.id AS dst, predicate AS attr FROM   r JOIN   v AS vsubject  ON   subject=vsubject.attr JOIN   v AS vobject  ON   object=vobject.attr")
+    GraphFrame(vdf,edf)
   }
 
 }

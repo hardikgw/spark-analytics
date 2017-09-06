@@ -10,10 +10,11 @@ libraryDependencies ++= {
     "org.apache.spark" %% "spark-core" % sparkVer withSources(),
     "org.apache.spark" %% "spark-streaming" % sparkVer,
     "org.apache.spark" %% "spark-sql" % sparkVer,
-    "graphframes/graphframes:0.5.0-spark2.1-s_2.11"
+    "org.apache.spark" %% "spark-graphx" % sparkVer
+//    "graphframes/graphframes:0.5.0-spark2.1-s_2.11"
   )
 }
 
-//spDependencies += "graphframes/graphframes:0.5.0-spark2.1-s_2.11"
+spDependencies += "graphframes/graphframes:0.5.0-spark2.1-s_2.11"
 
-resolvers += Resolver.url("SparkPackages", url("https://dl.bintray.com/spark-packages/maven/"))
+//resolvers += Resolver.url("SparkPackages", url("https://dl.bintray.com/spark-packages/maven/"))
