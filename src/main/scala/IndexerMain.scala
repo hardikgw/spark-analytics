@@ -1,9 +1,14 @@
 package main.scala
 
+import java.util.logging.LogManager
+
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.types._
 import org.apache.spark.{SparkConf, SparkContext}
 import org.graphframes._
+import org.apache.log4j.Level
+import org.apache.log4j.Logger
+import org.apache.log4j.lf5.LogLevel
 
 object IndexerMain {
 
@@ -12,10 +17,22 @@ object IndexerMain {
     val conf = new SparkConf().setMaster("local").setAppName("YAGO_Indexer").set("spark.executor.memory", "3g").set("spark.executor.instances", "2")
 
     val sc = new SparkContext(conf)
-    //    val ss = new SparkSession(sc)
+    sc.setLogLevel("ERROR")
+
     val file = "src/main/resources/yagoFactInfluence.tsv"
 
     val in = readRdfDf(sc, "src/main/resources/yagoFactInfluence.tsv")
+
+    in.vertices.show()
+
+    in.vertices.foreach((f) => {
+      println(f)
+    })
+
+    in.inDegrees.show()
+    in.outDegrees.show()
+
+
 
     in.edges.createOrReplaceTempView("e")
     in.vertices.createOrReplaceTempView("v")
