@@ -1,14 +1,9 @@
 package main.scala
 
-import java.util.logging.LogManager
-
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.types._
 import org.apache.spark.{SparkConf, SparkContext}
 import org.graphframes._
-import org.apache.log4j.Level
-import org.apache.log4j.Logger
-import org.apache.log4j.lf5.LogLevel
 
 object IndexerMain {
 
@@ -26,6 +21,9 @@ object IndexerMain {
     in.vertices.show()
 
     in.vertices.foreach((f) => {
+      println(f)
+    })
+    in.edges.foreach((f) => {
       println(f)
     })
 
