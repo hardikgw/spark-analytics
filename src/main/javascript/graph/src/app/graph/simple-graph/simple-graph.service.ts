@@ -10,6 +10,17 @@ export class SimpleGraphService {
 
   constructor() { }
 
+  /** A method to release node on double click */
+  applyDoubleClickableBehaviour(element, node: Node, graph: SimpleGraph) {
+    let d3element = d3.select(element);
+
+    function clicked() {
+        node.fx = null;
+        node.fy = null;
+    }
+    d3element.on("click", clicked);
+  }
+
   /** A method to bind a pan and zoom behaviour to an svg element */
   applyZoomableBehaviour(svgElement, containerElement) {
     let svg, container, zoomed, zoom;
@@ -46,9 +57,10 @@ export class SimpleGraphService {
         if (!d3.event.active) {
           graph.simulation.alphaTarget(0);
         }
-
-        node.fx = null;
-        node.fy = null;
+        node.x = d3.event.x;
+        node.y = d3.event.y;
+        // node.fx = null;
+        // node.fy = null;
       }
     }
 
@@ -60,8 +72,7 @@ export class SimpleGraphService {
    * This method does not interact with the document, purely physical calculations with d3
    */
   getForceDirectedGraph(nodes: Node[], links: Link[], options: { width, height }) {
-    let sg = new SimpleGraph(nodes, links, options);
-    return sg;
+    return new SimpleGraph(nodes, links, options);
   }
 
 
