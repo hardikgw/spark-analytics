@@ -2,18 +2,20 @@ import { Component, OnInit } from '@angular/core';
 import APP_CONFIG from '../../app.config';
 import { Node } from './node';
 import { Link } from './link'
+import { GraphframesService } from "../spark/graphframes.service";
 
 @Component({
   selector: 'simple-graph',
   templateUrl: './simple-graph.component.html',
-  styleUrls: ['./simple-graph.component.css']
+  styleUrls: ['./simple-graph.component.css'],
+  providers:[GraphframesService]
 })
 export class SimpleGraphComponent implements OnInit {
 
   nodes: Node[] = [];
   links: Link[] = [];
 
-  constructor() {
+  constructor(private graphService : GraphframesService) {
 
     const N = APP_CONFIG.N,
       getIndex = number => number - 1;
@@ -33,6 +35,8 @@ export class SimpleGraphComponent implements OnInit {
         this.links.push(new Link(i, i * m));
       }
     }
+
+    graphService.nodes();
 
   }
 

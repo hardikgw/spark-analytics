@@ -1,18 +1,33 @@
 package main.scala
 
-import org.apache.spark.sql.Row
+import org.apache.spark.sql.{DataFrame, Row}
 import org.apache.spark.sql.types._
 import org.apache.spark.{SparkConf, SparkContext}
 import org.graphframes._
 
 object IndexerMain {
 
-  def main(args: Array[String]) {
-
+  def getContext: SparkContext = {
     val conf = new SparkConf().setMaster("local").setAppName("YAGO_Indexer").set("spark.executor.memory", "3g").set("spark.executor.instances", "2")
-
     val sc = new SparkContext(conf)
     sc.setLogLevel("ERROR")
+    sc
+  }
+
+  def getGraphFrameEdges: Array[String] = {
+    val sc: SparkContext = getContext
+    val file = "src/main/resources/yagoFactInfluence.tsv"
+    val in = readRdfDf(sc, "src/main/resources/yagoFactInfluence.tsv")
+    in.edges.toJSON.collect()
+  }
+  def getGraphFrameVertices: Array[String] = {
+    val sc: SparkContext = getContext
+    val file = "src/main/resources/yagoFactInfluence.tsv"
+    val in = readRdfDf(sc, "src/main/resources/yagoFactInfluence.tsv")
+    in.edges.toJSON.collect()
+  }
+  def main(args: Array[String]) {
+    val sc: SparkContext = getContext
 
     val file = "src/main/resources/yagoFactInfluence.tsv"
 
@@ -72,7 +87,7 @@ object IndexerMain {
 
   }
 
-  def readRdfDf(sc: org.apache.spark.SparkContext, filename: String) = {
+  def readRdfDf(sc: org.apache.spark.SparkContext, filename: String): GraphFrame = {
     val r = sc.textFile(filename).map(_.split("\t"))
     val v = r.map(_ (1)).union(r.map(_ (3))).distinct.zipWithIndex.map(
 
