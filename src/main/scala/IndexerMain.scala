@@ -5,6 +5,8 @@ import org.apache.spark.sql.types._
 import org.apache.spark.{SparkConf, SparkContext}
 import org.graphframes._
 
+import scala.collection.immutable.HashMap
+
 object IndexerMain {
 
   def getContext: SparkContext = {
@@ -14,12 +16,16 @@ object IndexerMain {
     sc
   }
 
-  def getGraphFrameEdges: Array[String] = {
+  def getGraphFrame: Map[String, Array[String]] = {
     val sc: SparkContext = getContext
     val file = "src/main/resources/yagoFactInfluence.tsv"
     val in = readRdfDf(sc, "src/main/resources/yagoFactInfluence.tsv")
-    in.edges.toJSON.collect()
+    val out: Map[String, Array[String]] = Map("edges" -> in.edges.toJSON.collect(),
+    "vertices" -> in.vertices.toJSON.collect()
+    )
+    out
   }
+
   def getGraphFrameVertices: Array[String] = {
     val sc: SparkContext = getContext
     val file = "src/main/resources/yagoFactInfluence.tsv"
@@ -110,6 +116,13 @@ object IndexerMain {
     val edf = sqlContext.sql("SELECT vsubject.id AS src, vobject.id AS dst, predicate AS attr FROM   r JOIN   v AS vsubject  ON   subject=vsubject.attr JOIN   v AS vobject  ON   object=vobject.attr")
     GraphFrame(vdf, edf)
 
+  }
+
+  def initContextAndCreateGF: GraphFrame = {
+    val sc: SparkContext = getContext
+    val file = "src/main/resources/yagoFactInfluence.tsv"
+    val in = readRdfDf(sc, "src/main/resources/yagoFactInfluence.tsv")
+    in.persist()
   }
 
 }

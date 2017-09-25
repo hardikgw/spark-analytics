@@ -14,7 +14,7 @@ class SparkService extends Directives with JsonSupport {
       pathPrefix("graphframe") {
         pathPrefix("e") {
           pathEndOrSingleSlash {
-            complete(IndexerMain.getGraphFrameEdges)
+            complete(IndexerMain.getGraphFrame)
           }
         } ~
           pathPrefix("v") {

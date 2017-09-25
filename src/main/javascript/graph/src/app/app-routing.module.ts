@@ -6,6 +6,11 @@ const routes: Routes = [
   {
     path: 'graph',
     component: GraphComponent
+  },
+  {
+    path: '',
+    redirectTo : '/graph',
+    pathMatch: 'full'
   }
 ];
 
