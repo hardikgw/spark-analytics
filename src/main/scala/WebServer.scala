@@ -16,7 +16,7 @@ object WebServer {
 
     val service = new SparkService
 
-    val bindingFuture = Http().bindAndHandle(service.route, "localhost", 8080)
+    val bindingFuture = Http().bindAndHandle(service.route, "localhost", 8421)
 
     println(s"Server online at http://localhost:8080/\nPress RETURN to stop...")
     StdIn.readLine() // let it run until user presses return

@@ -6,24 +6,20 @@ scalaVersion := "2.11.8"
 
 sparkVersion := "2.2.0"
 
+val provided = "compile"
+
 libraryDependencies ++= {
   Seq(
-    "org.apache.spark" %% "spark-core" % sparkVersion.value,
-    "org.apache.spark" %% "spark-streaming" % sparkVersion.value,
-    "org.apache.spark" %% "spark-sql" % sparkVersion.value,
-    "org.apache.spark" %% "spark-graphx" % sparkVersion.value
+    "org.apache.spark" %% "spark-core" % sparkVersion.value % provided,
+    "org.apache.spark" %% "spark-streaming" % sparkVersion.value % provided,
+    "org.apache.spark" %% "spark-sql" % sparkVersion.value % provided,
+    "org.apache.spark" %% "spark-graphx" % sparkVersion.value % provided
   )
 }
 
 spDependencies += "graphframes/graphframes:0.5.0-spark2.1-s_2.11"
 
-//sparkComponents ++= {
-//  Seq(
-//    "core",
-//    "streaming",
-//    "sql",
-//    "graphx"
-//  )}
+sparkComponents ++=  Seq("core", "streaming", "sql", "graphx")
 
 
 libraryDependencies ++= {

@@ -9,14 +9,12 @@ import scala.collection.immutable.HashMap
 
 object IndexerMain {
 
-  //Tf3mfZ3J
-
-  val file = "src/main/resources/yagoFactInfluence.tsv"
-//  val file = "hdfs://localhost:9000/data/yagoFactInfluence.tsv"
+//  val file = "src/main/resources/yagoFactInfluence.tsv"
+  val file = "hdfs://master:9000/data/yagoFactInfluence.tsv"
   def getContext: SparkContext = {
     val master = "spark://localhost:7077"
-    val conf = new SparkConf().setMaster("local").setAppName("YAGO_Indexer").set("spark.executor.memory", "3g").set("spark.executor.instances", "2")
-//    val conf = new SparkConf().setMaster(master).setAppName("YAGO_Indexer").set("spark.executor.memory", "2g")
+//    val conf = new SparkConf().setMaster("local").setAppName("YAGO_Indexer").set("spark.executor.memory", "3g").set("spark.executor.instances", "2")
+    val conf = new SparkConf().setMaster(master).setAppName("YAGO_Indexer").set("spark.executor.memory", "2g").setJars(Seq("target/scala-2.11/scala-spark_2.11-0.1.jar"))
     val sc = new SparkContext(conf)
     sc.setLogLevel("ERROR")
     sc
