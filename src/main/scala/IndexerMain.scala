@@ -9,8 +9,14 @@ import scala.collection.immutable.HashMap
 
 object IndexerMain {
 
+  //Tf3mfZ3J
+
+  val file = "src/main/resources/yagoFactInfluence.tsv"
+//  val file = "hdfs://localhost:9000/data/yagoFactInfluence.tsv"
   def getContext: SparkContext = {
+    val master = "spark://localhost:7077"
     val conf = new SparkConf().setMaster("local").setAppName("YAGO_Indexer").set("spark.executor.memory", "3g").set("spark.executor.instances", "2")
+//    val conf = new SparkConf().setMaster(master).setAppName("YAGO_Indexer").set("spark.executor.memory", "2g")
     val sc = new SparkContext(conf)
     sc.setLogLevel("ERROR")
     sc
@@ -18,8 +24,7 @@ object IndexerMain {
 
   def getGraphFrame: Map[String, Array[String]] = {
     val sc: SparkContext = getContext
-    val file = "src/main/resources/yagoFactInfluence.tsv"
-    val in = readRdfDf(sc, "src/main/resources/yagoFactInfluence.tsv")
+    val in = readRdfDf(sc, file)
     val out: Map[String, Array[String]] = Map("edges" -> in.edges.toJSON.collect(),
     "vertices" -> in.vertices.toJSON.collect()
     )
@@ -28,16 +33,13 @@ object IndexerMain {
 
   def getGraphFrameVertices: Array[String] = {
     val sc: SparkContext = getContext
-    val file = "src/main/resources/yagoFactInfluence.tsv"
-    val in = readRdfDf(sc, "src/main/resources/yagoFactInfluence.tsv")
+    val in = readRdfDf(sc, file)
     in.edges.toJSON.collect()
   }
   def main(args: Array[String]) {
     val sc: SparkContext = getContext
 
-    val file = "src/main/resources/yagoFactInfluence.tsv"
-
-    val in = readRdfDf(sc, "src/main/resources/yagoFactInfluence.tsv")
+    val in = readRdfDf(sc, file)
 
     in.vertices.show()
 
@@ -50,8 +52,6 @@ object IndexerMain {
 
     in.inDegrees.show()
     in.outDegrees.show()
-
-
 
     in.edges.createOrReplaceTempView("e")
     in.vertices.createOrReplaceTempView("v")
@@ -89,14 +89,11 @@ object IndexerMain {
       "JOIN   pa" +
       "  ON   an=pn " +
       "ORDER BY score DESC").show
-
-
   }
 
   def readRdfDf(sc: org.apache.spark.SparkContext, filename: String): GraphFrame = {
     val r = sc.textFile(filename).map(_.split("\t"))
     val v = r.map(_ (1)).union(r.map(_ (3))).distinct.zipWithIndex.map(
-
       x => Row(x._2, x._1))
     // We must have an "id" column in the vertices DataFrame;
     // everything else is just properties we assign to the vertices
@@ -120,8 +117,7 @@ object IndexerMain {
 
   def initContextAndCreateGF: GraphFrame = {
     val sc: SparkContext = getContext
-    val file = "src/main/resources/yagoFactInfluence.tsv"
-    val in = readRdfDf(sc, "src/main/resources/yagoFactInfluence.tsv")
+    val in = readRdfDf(sc, file)
     in.persist()
   }
 

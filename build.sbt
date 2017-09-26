@@ -4,17 +4,27 @@ version := "0.1"
 
 scalaVersion := "2.11.8"
 
+sparkVersion := "2.2.0"
+
 libraryDependencies ++= {
-  val sparkVer = "2.2.0"
   Seq(
-    "org.apache.spark" %% "spark-core" % sparkVer withSources(),
-    "org.apache.spark" %% "spark-streaming" % sparkVer,
-    "org.apache.spark" %% "spark-sql" % sparkVer,
-    "org.apache.spark" %% "spark-graphx" % sparkVer
+    "org.apache.spark" %% "spark-core" % sparkVersion.value,
+    "org.apache.spark" %% "spark-streaming" % sparkVersion.value,
+    "org.apache.spark" %% "spark-sql" % sparkVersion.value,
+    "org.apache.spark" %% "spark-graphx" % sparkVersion.value
   )
 }
 
 spDependencies += "graphframes/graphframes:0.5.0-spark2.1-s_2.11"
+
+//sparkComponents ++= {
+//  Seq(
+//    "core",
+//    "streaming",
+//    "sql",
+//    "graphx"
+//  )}
+
 
 libraryDependencies ++= {
   val akkaVer = "10.0.10"
