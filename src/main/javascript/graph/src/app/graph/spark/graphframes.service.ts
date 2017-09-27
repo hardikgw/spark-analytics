@@ -8,8 +8,8 @@ export class GraphframesService {
   constructor(private http : HttpClient) {
 
   }
-  nodes(): Observable<any> {
-    return this.http.get('/gf/nodes');
+  getData(): Observable<any> {
+    return this.http.get<any>('http://localhost:8421/graphframe/a')
   }
 
 }
