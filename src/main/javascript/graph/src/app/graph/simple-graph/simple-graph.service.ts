@@ -51,6 +51,7 @@ export class SimpleGraphService {
       function dragged() {
         node.fx = d3.event.x;
         node.fy = d3.event.y;
+        console.log(node.attr.get("name"))
       }
 
       function ended() {

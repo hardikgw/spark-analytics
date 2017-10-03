@@ -1,4 +1,8 @@
-.link {
+.link-orignal {
   stroke-width: 1.75;
   stroke: rgb(222,237,250);
+}
+.link {
+  stroke-width: 0.75;
+  stroke: grey;
 }

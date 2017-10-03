@@ -77,7 +77,7 @@ export class SimpleGraph {
         .force("collide",
           d3.forceCollide()
             .strength(FORCES.COLLISION)
-            .radius(d => d['r'] + 5).iterations(2)
+            .radius(d => d['r'] + 5).iterations(1)
         );
 
       // Connecting the d3 ticker to an angular event emitter
@@ -90,7 +90,7 @@ export class SimpleGraph {
     }
 
     /** Updating the central force of the simulation */
-    this.simulation.force("centers", d3.forceCenter(options.width / 2, options.height / 2));
+    this.simulation.force("centers", d3.forceCenter(options.width / 2, options.height / 2)).alphaDecay(0.99);
 
     /** Restarting the simulation internal timer */
     this.simulation.restart();

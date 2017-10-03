@@ -42,13 +42,17 @@ export class SimpleGraphComponent implements OnInit {
       let links: Link[] = [];
 
       for(let i = 0; i < vertices.length; i++) {
-        nodes.push(new Node(i));
+        let node : Node = new Node(vertices[i].id);
+        node.attr.set("name",vertices[i].attr);
+        nodes.push(node);
       }
 
       for(let i = 0; i < edges.length; i++) {
-        nodes[edges[i].source].linkCount++;
-        nodes[edges[i].target].linkCount++;
-        links.push(new Link(edges[i].source, edges[i].target));
+        if (nodes[edges[i].source] && nodes[edges[i].target]) {
+          nodes[edges[i].source].linkCount++;
+          nodes[edges[i].target].linkCount++;
+          links.push(new Link(edges[i].source, edges[i].target));
+        }
       }
       this.nodes = nodes;
       this.links = links;

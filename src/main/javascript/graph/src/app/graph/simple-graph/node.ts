@@ -10,6 +10,8 @@ export class Node implements d3.SimulationNodeDatum {
   fx?: number | null;
   fy?: number | null;
 
+  attr: Map<String,any> = new Map();
+
   id: string;
   linkCount: number = 0;
 
@@ -19,7 +21,7 @@ export class Node implements d3.SimulationNodeDatum {
 
   normal = () => {
     return Math.sqrt(this.linkCount / APP_CONFIG.N);
-  }
+  };
 
   get r() {
     return 50 * this.normal() + 10;
