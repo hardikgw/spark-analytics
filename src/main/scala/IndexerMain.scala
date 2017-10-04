@@ -95,8 +95,8 @@ object IndexerMain {
   def readRdfDf(spark: SparkSession, filename: String): GraphFrame = {
     val sc: SparkContext = spark.sparkContext
 
-    val r = sc.textFile(filename).filter(line=>(line.contains("_id") || line.contains("_hashtags_text")) && line.count(_ == '|') >= 2).map(_.split("\\|"))
-    val v = r.map(_ (0)).union(r.map(_ (1))).distinct.zipWithIndex.map(
+    val r = sc.textFile(filename).filter(_.matches("^.*(_id|_hashtags_text).*$")).map(_.split('|')).filter(_.length>2)
+    val v = r.map(_(0)).union(r.map(_(2))).distinct.zipWithIndex.map(
       x => Row(x._2.toString, x._1.toString))
 
     val stv = StructType(StructField("id", StringType) :: StructField("attr", StringType) :: Nil)
