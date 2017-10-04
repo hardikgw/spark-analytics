@@ -1,6 +1,6 @@
 package main.scala
 
-import org.apache.spark.sql.{DataFrame, Row}
+import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 import org.apache.spark.sql.types._
 import org.apache.spark.{SparkConf, SparkContext}
 import org.graphframes._
@@ -8,21 +8,24 @@ import org.graphframes._
 import scala.collection.immutable.HashMap
 
 object IndexerMain {
-
+  val file = "/Users/hp/workbench/projects/gmu/tweets/2017100309.txt"
 //  val file = "src/main/resources/yagoFactInfluence.tsv"
-  val file = "hdfs://master:9000/data/yagoFactInfluence.tsv"
-  def getContext: SparkContext = {
-    val master = "spark://localhost:7077"
-//    val conf = new SparkConf().setMaster("local").setAppName("YAGO_Indexer").set("spark.executor.memory", "3g").set("spark.executor.instances", "2")
-    val conf = new SparkConf().setMaster(master).setAppName("YAGO_Indexer").set("spark.executor.memory", "2g").setJars(Seq("target/scala-2.11/scala-spark_2.11-0.1.jar"))
-    val sc = new SparkContext(conf)
-    sc.setLogLevel("ERROR")
-    sc
-  }
+//  val file = "hdfs://master:9000/data/yagoFactInfluence.tsv"
+  def getSparkSession: SparkSession = {
+//  val master = "spark://localhost:7077"
+  val spark = SparkSession
+    .builder()
+    .appName("YAGO_Indexer")
+    .config("spark.executor.memory", "3g")
+    .config("spark.executor.instances", "2")
+    .master("local")
+    .getOrCreate()
+  spark
+}
 
   def getGraphFrame: Map[String, Array[String]] = {
-    val sc: SparkContext = getContext
-    val in = readRdfDf(sc, file)
+    val spark: SparkSession = getSparkSession
+    val in = readRdfDf(spark, file)
     val out: Map[String, Array[String]] = Map("edges" -> in.edges.toJSON.collect(),
     "vertices" -> in.vertices.toJSON.collect()
     )
@@ -30,12 +33,12 @@ object IndexerMain {
   }
 
   def getGraphFrameVertices: Array[String] = {
-    val sc: SparkContext = getContext
+    val sc: SparkSession = getSparkSession
     val in = readRdfDf(sc, file)
     in.edges.toJSON.collect()
   }
   def main(args: Array[String]) {
-    val sc: SparkContext = getContext
+    val sc: SparkSession = getSparkSession
 
     val in = readRdfDf(sc, file)
 
@@ -89,33 +92,36 @@ object IndexerMain {
       "ORDER BY score DESC").show
   }
 
-  def readRdfDf(sc: org.apache.spark.SparkContext, filename: String): GraphFrame = {
-    val r = sc.textFile(filename).map(_.split("\t"))
-    val v = r.map(_ (1)).union(r.map(_ (3))).distinct.zipWithIndex.map(
-      x => Row(x._2, x._1))
-    // We must have an "id" column in the vertices DataFrame;
-    // everything else is just properties we assign to the vertices
-    val stv = StructType(StructField("id", LongType) ::
-      StructField("attr", StringType) :: Nil)
-    val sqlContext = new org.apache.spark.sql.SQLContext(sc)
-    val vdf = sqlContext.createDataFrame(v, stv)
+  def readRdfDf(spark: SparkSession, filename: String): GraphFrame = {
+    val sc: SparkContext = spark.sparkContext
+
+    val r = sc.textFile(filename).filter(line=>(line.contains("_id") || line.contains("_hashtags_text")) && line.count(_ == '|') >= 2).map(_.split("\\|"))
+    val v = r.map(_ (0)).union(r.map(_ (1))).distinct.zipWithIndex.map(
+      x => Row(x._2.toString, x._1.toString))
+
+    val stv = StructType(StructField("id", StringType) :: StructField("attr", StringType) :: Nil)
+
+    val vdf = spark.createDataFrame(v, stv)
+    print(vdf.count())
+
     vdf.createOrReplaceTempView("v")
-    val str = StructType(StructField("rdfId", StringType) ::
+    val str = StructType(
       StructField("subject", StringType) ::
       StructField("predicate", StringType) ::
-      StructField("object", StringType) :: Nil)
-    sqlContext.createDataFrame(r.map(Row.fromSeq(_)), str)
+      StructField("object", StringType) ::
+        Nil
+    )
+    spark.createDataFrame(r.map(Row.fromSeq(_)), str)
       .createOrReplaceTempView("r")
-    // We must have an "src" and "dst" columns in the edges DataFrame;
-    // everything else is just properties we assign to the edges
-    val edf = sqlContext.sql("SELECT vsubject.id AS src, vobject.id AS dst, predicate AS attr FROM   r JOIN   v AS vsubject  ON   subject=vsubject.attr JOIN   v AS vobject  ON   object=vobject.attr")
+
+    val edf = spark.sql("SELECT vsubject.id AS src, vobject.id AS dst, predicate AS attr FROM   r JOIN   v AS vsubject  ON   subject=vsubject.attr JOIN   v AS vobject  ON   object=vobject.attr")
     GraphFrame(vdf, edf)
 
   }
 
   def initContextAndCreateGF: GraphFrame = {
-    val sc: SparkContext = getContext
-    val in = readRdfDf(sc, file)
+    val spark: SparkSession = getSparkSession
+    val in = readRdfDf(spark, file)
     in.persist()
   }
 
