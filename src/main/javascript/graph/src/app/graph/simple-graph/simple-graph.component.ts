@@ -54,6 +54,14 @@ export class SimpleGraphComponent implements OnInit {
           links.push(new Link(edges[i].source, edges[i].target));
         }
       }
+      for(let i = 0; i < nodes.length; i++) {
+        if (nodes[i].linkCount > 4) {
+          nodes[i].linkCount = 150;
+        } else {
+          nodes[i].linkCount = 1;
+        }
+      }
+
       this.nodes = nodes;
       this.links = links;
     });
