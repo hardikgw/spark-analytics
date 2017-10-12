@@ -40,28 +40,23 @@ export class SimpleGraphComponent implements OnInit {
 
       let nodes: Node[] = [];
       let links: Link[] = [];
-
+      let verticesIds: Map<string, number>  = new Map();
       for(let i = 0; i < vertices.length; i++) {
+        verticesIds.set(vertices[i].id, i);
         let node : Node = new Node(vertices[i].id);
         node.attr.set("name",vertices[i].attr);
         nodes.push(node);
       }
 
       for(let i = 0; i < edges.length; i++) {
-        if (nodes[edges[i].source] && nodes[edges[i].target]) {
-          nodes[edges[i].source].linkCount++;
-          nodes[edges[i].target].linkCount++;
-          links.push(new Link(edges[i].source, edges[i].target));
+        let source: Node = nodes[verticesIds.get(edges[i].src)];
+        let target: Node = nodes[verticesIds.get(edges[i].dst)];
+        if (source && target) {
+          nodes[verticesIds.get(edges[i].src)].linkCount++;
+          nodes[verticesIds.get(edges[i].dst)].linkCount++;
+          links.push(new Link(edges[i].src, edges[i].dst));
         }
       }
-      for(let i = 0; i < nodes.length; i++) {
-        if (nodes[i].linkCount > 4) {
-          nodes[i].linkCount = 150;
-        } else {
-          nodes[i].linkCount = 1;
-        }
-      }
-
       this.nodes = nodes;
       this.links = links;
     });

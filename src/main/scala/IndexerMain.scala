@@ -28,8 +28,9 @@ object IndexerMain {
     val spark: SparkSession = getSparkSession
     val in = readRdfDf(spark, file)
     in.inDegrees.filter(_.size>1)
-    val out: Map[String, Array[String]] = Map("edges" -> in.edges.toJSON.collect(),
-      "vertices" -> in.vertices.toJSON.collect()
+    val filtered = getTopGraphFrame(spark, in)
+    val out: Map[String, Array[String]] = Map("edges" -> filtered.edges.toJSON.collect(),
+      "vertices" -> filtered.vertices.toJSON.collect()
     )
     out
   }
@@ -39,6 +40,24 @@ object IndexerMain {
     val in = readRdfDf(sc, file)
     in.edges.toJSON.collect()
   }
+
+  def getTopGraphFrame(spark: SparkSession, in: GraphFrame): GraphFrame = {
+
+    in.edges.createOrReplaceTempView("e")
+    in.vertices.createOrReplaceTempView("v")
+
+    val topVertexIds = spark.sql("SELECT allview.ID as ID, count(*) as CNT FROM (SELECT src as ID FROM e UNION ALL SELECT dst as ID FROM e) as allview GROUP BY allview.ID")
+    topVertexIds.filter(_.getLong(1) > 2).orderBy(topVertexIds.col("CNT").desc).limit(15).createOrReplaceTempView("f")
+
+    val finalEdges = spark.sql("SELECT src, dst, attr FROM e WHERE e.src IN (SELECT ID FROM f) OR e.dst IN (SELECT ID FROM f)")
+    finalEdges.createOrReplaceTempView("finalE")
+
+    val finalVertices = spark.sql("SELECT id, attr FROM v WHERE v.id IN (SELECT src FROM finalE) OR v.id IN (SELECT dst from finalE)")
+
+    GraphFrame(finalVertices, finalEdges)
+
+  }
+
   def main(args: Array[String]) {
 
     val sc: SparkSession = getSparkSession
@@ -57,51 +76,12 @@ object IndexerMain {
     val topVertexIds = sc.sql("SELECT allview.ID as ID, count(*) as CNT FROM (SELECT src as ID FROM e UNION ALL SELECT dst as ID FROM e) as allview GROUP BY allview.ID")
     topVertexIds.filter(_.getLong(1) > 2).orderBy(topVertexIds.col("CNT").desc).limit(15).createOrReplaceTempView("f")
 
-    val topVertexEdges = sc.sql("SELECT src, dst, attr from v WHERE v.src IN (SELECT ID FROM f) OR v.dst IN (SELECT ID FROM f)")
-    topVertexEdges.show()
+    val finalEdges = sc.sql("SELECT src, dst, attr FROM e WHERE e.src IN (SELECT ID FROM f) OR e.dst IN (SELECT ID FROM f)")
+    finalEdges.createOrReplaceTempView("finalE")
 
+    val finalVertices = sc.sql("SELECT id, attr FROM v WHERE v.id IN (SELECT src FROM finalE) OR v.id IN (SELECT dst from finalE)")
 
-    val in2 = GraphFrame(in.vertices.sqlContext.sql(
-      "SELECT v.id," +
-        "       FIRST(v.attr) AS attr," +
-        "       COUNT(*) AS outdegree " +
-        "FROM   v, e " +
-        "WHERE   e.src = v.id OR e.dst = v.id " +
-        "GROUP BY v.id").cache,
-      in.edges)
-
-    in2.vertices.foreach((f) => {
-      println(f)
-    })
-    in2.edges.foreach((f) => {
-      //      println(f)
-    })
-
-
-//    val absent = in2.find("(v1)-[]->(v2); (v2)-[]->(v3); !(v1)-[]->(v3)")
-//    absent.createOrReplaceTempView("a")
-//
-//    val present = in2.find("(v1)-[]->(v2); (v2)-[]->(v3); (v1)-[]->(v3)")
-//    present.createOrReplaceTempView("p")
-//
-//    absent.sqlContext.sql(
-//      "SELECT v1 an," +
-//        "       SUM(v1.outdegree * v2.outdegree * v3.outdegree) AS ac " +
-//        "FROM   a " +
-//        "GROUP BY v1").createOrReplaceTempView("aa")
-//
-//    present.sqlContext.sql(
-//      "SELECT v1 pn," +
-//        "       SUM(v1.outdegree * v2.outdegree * v3.outdegree) AS pc " +
-//        "FROM   p " +
-//        "GROUP BY v1").createOrReplaceTempView("pa")
-//
-//    absent.sqlContext.sql("SELECT an," +
-//      "       ac * pc/(ac+pc) AS score " +
-//      "FROM   aa " +
-//      "JOIN   pa" +
-//      "  ON   an=pn " +
-//      "ORDER BY score DESC").show
+    GraphFrame(finalVertices, finalEdges)
   }
 
   def readRdfDf(spark: SparkSession, filename: String): GraphFrame = {

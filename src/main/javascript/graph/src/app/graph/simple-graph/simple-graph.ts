@@ -31,12 +31,10 @@ export class SimpleGraph {
     if (!this.nodes[source] || !this.nodes[target]) {
       throw new Error('One of the nodes does not exist');
     }
-    if (this.nodes[source].linkCount>1 && this.nodes[target].linkCount>1) {
-      link = new Link(source, target);
-      this.simulation.stop();
-      this.links.push(link);
-      this.simulation.alphaTarget(0.3).restart();
-    }
+    link = new Link(source, target);
+    this.simulation.stop();
+    this.links.push(link);
+    this.simulation.alphaTarget(0.3).restart();
     this.initLinks();
   }
 
