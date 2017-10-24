@@ -10,15 +10,27 @@ export class SimpleGraphService {
 
   constructor() { }
 
+  /** A method to highlight lined edges of selected node on click */
+  applyClickableBehaviour(element, node: Node, graph: SimpleGraph) {
+    let d3element = d3.select(element);
+
+    function clicked() {
+      node.fx = null;
+      node.fy = null;
+    }
+    d3element.on("click", clicked);
+  }
+
   /** A method to release node on double click */
   applyDoubleClickableBehaviour(element, node: Node, graph: SimpleGraph) {
     let d3element = d3.select(element);
 
-    function clicked() {
+    function dblclick() {
         node.fx = null;
         node.fy = null;
+        console.log("dblclick");
     }
-    d3element.on("click", clicked);
+    d3element.on("dblclick", dblclick);
   }
 
   /** A method to bind a pan and zoom behaviour to an svg element */
@@ -34,7 +46,7 @@ export class SimpleGraphService {
     };
 
     zoom = d3.zoom().on("zoom", zoomed);
-    svg.call(zoom);
+    svg.call(zoom).on("dblclick.zoom", null);
   }
 
   /** A method to bind a draggable behaviour to an svg element */
@@ -56,7 +68,7 @@ export class SimpleGraphService {
 
       function ended() {
         if (!d3.event.active) {
-          graph.simulation.alphaTarget(0);
+          graph.simulation.alphaTarget(0).alphaDecay(0.9);
         }
         node.x = d3.event.x;
         node.y = d3.event.y;
