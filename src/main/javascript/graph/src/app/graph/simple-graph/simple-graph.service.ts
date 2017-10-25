@@ -13,10 +13,14 @@ export class SimpleGraphService {
   /** A method to highlight lined edges of selected node on click */
   applyClickableBehaviour(element, node: Node, graph: SimpleGraph) {
     let d3element = d3.select(element);
+    let svg = d3.select(element.parentElement).selectAll("line").data(graph.links);
 
     function clicked() {
-      node.fx = null;
-      node.fy = null;
+      svg.style('stroke', o => {
+        return (o.source === node|| o.target === node ? "red" : "rgb(222,237,250)")
+      });
+      // d3element.style('fill', '#DDD');
+      console.log("clicked" + node.id);
     }
     d3element.on("click", clicked);
   }
@@ -28,7 +32,6 @@ export class SimpleGraphService {
     function dblclick() {
         node.fx = null;
         node.fy = null;
-        console.log("dblclick");
     }
     d3element.on("dblclick", dblclick);
   }

@@ -14,6 +14,7 @@ import { SimpleGraphSvgComponent } from './graph/simple-graph/simple-graph-svg/s
 import { SimpleGraphNodeSvgComponent } from './graph/simple-graph/simple-graph-node-svg/simple-graph-node-svg.component';
 import { SimpleGraphLinkSvgComponent } from './graph/simple-graph/simple-graph-link-svg/simple-graph-link-svg.component';
 import {SimpleGraphService} from "./graph/simple-graph/simple-graph.service";
+import {Globals} from "./globals";
 
 
 @NgModule({
@@ -35,7 +36,10 @@ import {SimpleGraphService} from "./graph/simple-graph/simple-graph.service";
     RouterModule,
     AppRoutingModule
   ],
-  providers: [SimpleGraphService],
+  providers: [
+    SimpleGraphService,
+    Globals
+  ],
   bootstrap: [AppComponent]
 })
 

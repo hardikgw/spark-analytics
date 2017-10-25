@@ -16,5 +16,7 @@ export class DraggableDirective {
   ngOnInit() {
     this.service.applyDraggableBehaviour(this._element.nativeElement, this.node, this.graph);
     this.service.applyDoubleClickableBehaviour(this._element.nativeElement, this.node, this.graph);
+    this.service.applyClickableBehaviour(this._element.nativeElement, this.node, this.graph);
   }
+
 }

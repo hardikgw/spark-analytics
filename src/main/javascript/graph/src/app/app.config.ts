@@ -1,5 +1,5 @@
 const CONFIG = {
-  N : 100,
+  N : 0,
   SPECTRUM: [
     // "rgb(222,237,250)"
     "rgb(176,212,243)",
@@ -12,6 +12,6 @@ const CONFIG = {
     // "rgb(0,82,154)"
     // "rgb(0,60,113)"
   ]
-}
+};
 
 export default CONFIG;
