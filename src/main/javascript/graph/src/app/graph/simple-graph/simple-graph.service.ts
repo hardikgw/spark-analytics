@@ -4,33 +4,39 @@ import { Link } from './link'
 import { SimpleGraph} from "./simple-graph";
 import {GraphframesService} from "../spark/graphframes.service";
 import * as d3 from 'd3';
+import {Globals} from "../../globals";
 
 @Injectable()
 export class SimpleGraphService {
 
-  constructor(private sparkService:GraphframesService) { }
+  constructor(private sparkService:GraphframesService, private  globalVars : Globals) { }
 
   /** A method to highlight lined edges of selected node on click */
   applyClickableBehaviour(element, node: Node, graph: SimpleGraph) {
     let d3element = d3.select(element);
     let svg = d3.select(element.parentElement).selectAll("line").data(graph.links);
     let sparkService = this.sparkService;
+    let globalVars = this.globalVars;
     function clicked() {
       svg.style('stroke', o => {
         return (o.source === node|| o.target === node ? "red" : "rgb(222,237,250)")
       });
-      sparkService.getConnectedGraph(node.id).subscribe(data=> {
-        let vertices = data.vertices;
-        let edges = data.edges;
-        vertices.forEach((vertice)=>{
-          graph.nodes.push(new Node(vertice.id))
+      if (globalVars.verticesLinkCount[node.id] < 2) {
+        sparkService.getConnectedGraph(node.id).subscribe(data => {
+          let vertices = data.vertices;
+          let edges = data.edges;
+          globalVars.totalNodes += vertices.length;
+          vertices.forEach((vertice) => {
+            graph.nodes.push(new Node(vertice.id));
+            globalVars.verticesLinkCount[vertice.id] ++;
+          });
+          edges.forEach((edge) => {
+            graph.links.push(new Link(edge.src, edge.dst));
+            globalVars.verticesLinkCount[edge.src] ++;
+            globalVars.verticesLinkCount[edge.dst] ++;
+          });
         });
-        edges.forEach((edge)=> {
-          graph.links.push(new Link(edge.src, edge.dst))
-        });
-        console.log(edges);
-        console.log(vertices);
-      });
+      }
       console.log("clicked" + node.id);
     }
     d3element.on("click", clicked);
