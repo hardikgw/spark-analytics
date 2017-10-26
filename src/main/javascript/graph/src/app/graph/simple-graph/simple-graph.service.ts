@@ -23,7 +23,7 @@ export class SimpleGraphService {
       });
       if (globalVars.verticesLinkCount[node.id] < 2) {
         sparkService.getConnectedGraph(node.id).subscribe(data => {
-
+          graph.simulation.stop();
           let vertices = data.vertices;
           let edges = data.edges;
 
@@ -48,7 +48,7 @@ export class SimpleGraphService {
             globalVars.verticesLinkCount[e.dst] ++;
           });
           nodes.forEach((n)=>{
-            n.linkCount = globalVars.verticesLinkCount[n.id] + 700;
+            n.linkCount += globalVars.verticesLinkCount[n.id] + 700;
             graph.nodes.push(n);
           });
           links.forEach((l)=> {
@@ -57,7 +57,7 @@ export class SimpleGraphService {
 
           graph.initNodes();
           graph.initLinks();
-          graph.simulation.restart();
+          graph.simulation.alpha(1).restart();
 
         });
       }
