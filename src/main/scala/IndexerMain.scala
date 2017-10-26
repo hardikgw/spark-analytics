@@ -126,9 +126,6 @@ object IndexerMain {
 
     val edf = spark.sql("SELECT vsubject.id AS src, vobject.id AS dst, predicate AS attr FROM r JOIN v AS vsubject ON r.subject=vsubject.attr JOIN v AS vobject ON r.object=vobject.attr")
 
-    edf.foreach((f) => {
-//      println(f)
-    })
     GraphFrame(vdf, edf)
 
   }

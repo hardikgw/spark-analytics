@@ -28,6 +28,7 @@ export class SimpleGraphComponent implements OnInit {
       let links: Link[] = [];
 
       globalVars.totalNodes = vertices.length;
+      globalVars.verticesLinkCount = new Map();
 
       vertices.forEach((vertice) => {
         let node : Node = new Node(vertice.id);

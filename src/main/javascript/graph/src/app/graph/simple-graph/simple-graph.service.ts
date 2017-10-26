@@ -23,21 +23,44 @@ export class SimpleGraphService {
       });
       if (globalVars.verticesLinkCount[node.id] < 2) {
         sparkService.getConnectedGraph(node.id).subscribe(data => {
+
           let vertices = data.vertices;
           let edges = data.edges;
+
+          let nodes : Node[] = [];
+          let links : Link[] = [];
+
           globalVars.totalNodes += vertices.length;
-          vertices.forEach((vertice) => {
-            graph.nodes.push(new Node(vertice.id));
-            globalVars.verticesLinkCount[vertice.id] ++;
+          vertices.forEach((v) => {
+            let node : Node = new Node(v.id);
+            node.attr.set("name", v.attr);
+            nodes.push(node);
+            if (!globalVars.verticesLinkCount.has(v.id)) {
+              globalVars.verticesLinkCount.set(v.id, 1);
+              console.log(v.id + " added");
+            } else {
+              console.log(v.id + " already exists");
+            }
           });
-          edges.forEach((edge) => {
-            graph.links.push(new Link(edge.src, edge.dst));
-            globalVars.verticesLinkCount[edge.src] ++;
-            globalVars.verticesLinkCount[edge.dst] ++;
+          edges.forEach((e) => {
+            links.push(new Link(e.src, e.dst));
+            globalVars.verticesLinkCount[e.src] ++;
+            globalVars.verticesLinkCount[e.dst] ++;
           });
+          nodes.forEach((n)=>{
+            n.linkCount = globalVars.verticesLinkCount[n.id] + 700;
+            graph.nodes.push(n);
+          });
+          links.forEach((l)=> {
+            graph.links.push(l);
+          });
+
+          graph.initNodes();
+          graph.initLinks();
+          graph.simulation.restart();
+
         });
       }
-      console.log("clicked" + node.id);
     }
     d3element.on("click", clicked);
   }
