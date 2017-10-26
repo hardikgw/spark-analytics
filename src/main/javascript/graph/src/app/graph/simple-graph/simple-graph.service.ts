@@ -22,6 +22,12 @@ export class SimpleGraphService {
       sparkService.getConnectedGraph(node.id).subscribe(data=> {
         let vertices = data.vertices;
         let edges = data.edges;
+        vertices.forEach((vertice)=>{
+          graph.nodes.push(new Node(vertice.id))
+        });
+        edges.forEach((edge)=> {
+          graph.links.push(new Link(edge.src, edge.dst))
+        });
         console.log(edges);
         console.log(vertices);
       });

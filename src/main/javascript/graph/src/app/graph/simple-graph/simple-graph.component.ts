@@ -29,24 +29,24 @@ export class SimpleGraphComponent implements OnInit {
 
       globalVars.totalNodes = vertices.length;
 
-      let verticesIds: Map<string, number>  = new Map();
+      let verticesLinkCount: Map<string, number>  = new Map();
 
-      for(let i = 0; i < vertices.length; i++) {
-        verticesIds.set(vertices[i].id, i);
-        let node : Node = new Node(vertices[i].id);
-        node.attr.set("name",vertices[i].attr);
+      vertices.forEach((vertice) => {
+        let node : Node = new Node(vertice.id);
+        node.attr.set("name", vertice.attr);
         nodes.push(node);
-      }
+        verticesLinkCount[node.id] = 0;
+      });
 
-      for(let i = 0; i < edges.length; i++) {
-        let source: Node = nodes[verticesIds.get(edges[i].src)];
-        let target: Node = nodes[verticesIds.get(edges[i].dst)];
-        if (source && target) {
-          nodes[verticesIds.get(edges[i].src)].linkCount++;
-          nodes[verticesIds.get(edges[i].dst)].linkCount++;
-          links.push(new Link(edges[i].src, edges[i].dst));
-        }
-      }
+      edges.forEach((edge)=> {
+        links.push(new Link(edge.src, edge.dst));
+        verticesLinkCount[edge.src] ++;
+        verticesLinkCount[edge.dst] ++;
+      });
+
+      nodes.forEach((node) => {
+        node.linkCount = verticesLinkCount[node.id]
+      });
 
       this.nodes = nodes;
       this.links = links;
