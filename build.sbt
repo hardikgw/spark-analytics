@@ -30,5 +30,6 @@ libraryDependencies ++= {
     // Only when running against Akka 2.5 explicitly depend on akka-streams in same version as akka-actor
     "com.typesafe.akka" %% "akka-stream" % "2.5.4",
     "com.typesafe.akka" %% "akka-actor"  % "2.5.4"
+
   )
 }

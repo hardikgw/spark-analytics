@@ -1,18 +1,18 @@
 package main.scala
 
-import org.apache.spark.sql.{DataFrame, Row, SparkSession}
+import org.apache.spark.SparkContext
 import org.apache.spark.sql.types._
-import org.apache.spark.{SparkConf, SparkContext}
+import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 import org.graphframes._
-
-import scala.collection.immutable.HashMap
+import spray.json.{JsArray, JsObject, JsString}
+import spray.json._
 
 object IndexerMain {
   val file = "/Users/hp/workbench/projects/gmu/tweets/2017100309.txt"
 //  val file = "src/main/resources/yagoFactInfluence.tsv"
 //  val file = "hdfs://master:9000/data/yagoFactInfluence.tsv"
   def getSparkSession: SparkSession = {
-//  val master = "spark://localhost:7077"
+  val master = "spark://localhost:7077"
   val spark = SparkSession
     .builder()
     .appName("YAGO_Indexer")
@@ -23,22 +23,36 @@ object IndexerMain {
   spark.sparkContext.setLogLevel("ERROR")
   spark
 }
+  def getLinkedNodes(nodeId : String): JsObject = {
 
-  def getGraphFrame: Map[String, Array[String]] = {
     val spark: SparkSession = getSparkSession
-    val in = readRdfDf(spark, file)
-    in.inDegrees.filter(_.size>1)
-    val filtered = getTopGraphFrame(spark, in)
-    val out: Map[String, Array[String]] = Map("edges" -> filtered.edges.toJSON.collect(),
-      "vertices" -> filtered.vertices.toJSON.collect()
+    val edges = spark.sql("SELECT src, dst, attr FROM global_temp.edges e WHERE e.src='" + nodeId + "' OR e.dst= '" + nodeId + "'")
+    edges.createOrReplaceTempView("e")
+    val vertices = spark.sql("SELECT id, attr FROM global_temp.vertices v WHERE v.id IN (SELECT src FROM e) OR v.id IN (SELECT dst from e)")
+//    GraphFrame(vertices, edges)
+    JsObject(
+      "edges" -> getJs(edges),
+      "vertices" -> getJs(vertices)
     )
-    out
   }
 
-  def getGraphFrameVertices: Array[String] = {
-    val sc: SparkSession = getSparkSession
-    val in = readRdfDf(sc, file)
-    in.edges.toJSON.collect()
+  def getJs(df: DataFrame): JsValue = {
+    val collectedData  = df.toJSON.coalesce(1).collect().mkString("\n")
+    val json = "[" + ("}\n".r replaceAllIn (collectedData, "},\n")) + "]"
+    json.parseJson
+  }
+
+  def getGraphFrame: JsObject = {
+    val spark: SparkSession = getSparkSession
+    val in = readRdfDf(spark, file)
+    in.vertices.createOrReplaceGlobalTempView("vertices")
+    in.edges.createOrReplaceGlobalTempView("edges")
+    in.inDegrees.filter(_.size>1)
+    val out = getTopGraphFrame(spark, in)
+    JsObject(
+      "edges" -> getJs(out.edges),
+      "vertices" -> getJs(out.vertices)
+    )
   }
 
   def getTopGraphFrame(spark: SparkSession, in: GraphFrame): GraphFrame = {
@@ -90,6 +104,9 @@ object IndexerMain {
     val r = sc.textFile(filename).filter(_.matches("^.*(_hashtags_text|mentions_id).*$")).map(_.split('|')).filter(_.length>2)
     val v = r.map(_(0)).union(r.map(_(2))).distinct.zipWithIndex.map(
       x => Row(x._2.toString, x._1.toString))
+
+    //mentions
+    val m = sc.textFile(filename).filter(_.matches("^.*(_mentions_name).*$")).map(_.split('|')).filter(_.length>2)
 
     val stv = StructType(StructField("id", StringType) :: StructField("attr", StringType) :: Nil)
 
