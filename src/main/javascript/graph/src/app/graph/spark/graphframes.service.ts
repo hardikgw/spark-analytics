@@ -11,5 +11,8 @@ export class GraphframesService {
   getData(): Observable<any> {
     return this.http.get<any>('http://localhost:8421/graphframe/a')
   }
+  getConnectedGraph(nodeId:String): Observable<any> {
+    return this.http.get<any>('http://localhost:8421/graphframe/connected?nodeId=' + nodeId )
+  }
 
 }

@@ -2,24 +2,29 @@ import { Injectable, EventEmitter } from '@angular/core';
 import { Node } from './node'
 import { Link } from './link'
 import { SimpleGraph} from "./simple-graph";
-
+import {GraphframesService} from "../spark/graphframes.service";
 import * as d3 from 'd3';
 
 @Injectable()
 export class SimpleGraphService {
 
-  constructor() { }
+  constructor(private sparkService:GraphframesService) { }
 
   /** A method to highlight lined edges of selected node on click */
   applyClickableBehaviour(element, node: Node, graph: SimpleGraph) {
     let d3element = d3.select(element);
     let svg = d3.select(element.parentElement).selectAll("line").data(graph.links);
-
+    let sparkService = this.sparkService;
     function clicked() {
       svg.style('stroke', o => {
         return (o.source === node|| o.target === node ? "red" : "rgb(222,237,250)")
       });
-      // d3element.style('fill', '#DDD');
+      sparkService.getConnectedGraph(node.id).subscribe(data=> {
+        let vertices = data.vertices;
+        let edges = data.edges;
+        console.log(edges);
+        console.log(vertices);
+      });
       console.log("clicked" + node.id);
     }
     d3element.on("click", clicked);

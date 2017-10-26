@@ -8,8 +8,7 @@ import {Globals} from "../../globals";
 @Component({
   selector: 'simple-graph',
   templateUrl: './simple-graph.component.html',
-  styleUrls: ['./simple-graph.component.css'],
-  providers:[GraphframesService]
+  styleUrls: ['./simple-graph.component.css']
 })
 export class SimpleGraphComponent implements OnInit {
 
