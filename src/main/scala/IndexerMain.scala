@@ -78,12 +78,6 @@ object IndexerMain {
 
     val in = readRdfDf(sc, file)
 
-    in.vertices.show()
-    in.edges.show()
-
-//    in.inDegrees.show()
-//    in.outDegrees.show()
-
     in.edges.createOrReplaceTempView("e")
     in.vertices.createOrReplaceTempView("v")
 
@@ -101,36 +95,23 @@ object IndexerMain {
   def readRdfDf(spark: SparkSession, filename: String): GraphFrame = {
     val sc: SparkContext = spark.sparkContext
     import spark.implicits._
-    import org.apache.spark.sql.functions.{collect_list, struct}
+    import org.apache.spark.sql.functions.{collect_set, struct}
 
     val id_rows = sc.textFile(filename).filter(_.matches("^.*(_hashtags_text|mentions_id|place_id).*$")).map(_.split('|')).filter(_.length>2)
-    val arg_rows = sc.textFile(filename).filter(_.matches("^.*(tweet_text|tweet_user_screen_name|mentions_screen_name|user_screen_name|).*$")).map(_.split('|')).filter(_.length>2)
+    val arg_rows = sc.textFile(filename).filter(_.matches("^.*(tweet_text|tweet_user_screen_name|mentions_screen_name|user_screen_name).*$")).map(_.split('|')).filter(_.length>2)
 
     val ids = id_rows.map(_(0)).union(id_rows.map(_(2))).distinct()
 
     val attr_rows = sc.textFile(filename).filter(_.matches("^.*(_hashtags_text|mentions_id).*$")).map(_.split('|')).filter(_.length>2)
 
     val arg_df = arg_rows.map{case Array(a,b,c) =>
-      (a,b,c)}.toDF("id","key","value")
-    print(arg_df.count())
-    arg_df.dropDuplicates("id", "key")
-    print(arg_df.count())
+      (a,b.split("_").takeRight(2).mkString("_"), c)}.toDF("id","key","value")
 
     val vdf = arg_df.groupBy($"id")
-      .agg(collect_list(struct($"key", $"value")).as("attr"))
+      .agg(collect_set(struct($"key", $"value")).as("attr"))
 
-    vdf.show()
-
-//
-//    //mentions
-//    val m = sc.textFile(filename).filter(_.matches("^.*(_mentions_name).*$")).map(_.split('|')).filter(_.length>2)
-//
-//    val stv = StructType(StructField("id", StringType) :: StructField("attr", StringType) :: Nil)
-//
-//    val vdf = spark.createDataFrame(v, stv)
-//
     vdf.createOrReplaceTempView("v")
-//
+
     val str = StructType(
       StructField("subject", StringType) ::
       StructField("predicate", StringType) ::
