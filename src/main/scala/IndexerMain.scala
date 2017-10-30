@@ -97,12 +97,8 @@ object IndexerMain {
     import spark.implicits._
     import org.apache.spark.sql.functions.{collect_set, struct}
 
-    val id_rows = sc.textFile(filename).filter(_.matches("^.*(_hashtags_text|mentions_id|place_id).*$")).map(_.split('|')).filter(_.length>2)
+    val id_rows = sc.textFile(filename).filter(_.matches("^.*(_hashtags_text|entities_user_mentions_id|place_id).*$")).map(_.split('|')).filter(_.length>2)
     val arg_rows = sc.textFile(filename).filter(_.matches("^.*(tweet_text|tweet_user_screen_name|mentions_screen_name|user_screen_name).*$")).map(_.split('|')).filter(_.length>2)
-
-    val ids = id_rows.map(_(0)).union(id_rows.map(_(2))).distinct()
-
-    val attr_rows = sc.textFile(filename).filter(_.matches("^.*(_hashtags_text|mentions_id).*$")).map(_.split('|')).filter(_.length>2)
 
     val arg_df = arg_rows.map{case Array(a,b,c) =>
       (a,b.split("_").takeRight(2).mkString("_"), c)}.toDF("id","key","value")
@@ -112,15 +108,10 @@ object IndexerMain {
 
     vdf.createOrReplaceTempView("v")
 
-    val str = StructType(
-      StructField("subject", StringType) ::
-      StructField("predicate", StringType) ::
-      StructField("object", StringType) ::
-        Nil
-    )
+    val edges_rows = id_rows.map{case Array(a, b, c) =>
+      (a,b.split("_").takeRight(2).mkString("_"), c)}.toDF("subject","predicate","object")
 
-    spark.createDataFrame(id_rows.map(Row.fromSeq(_)), str)
-      .createOrReplaceTempView("r")
+    edges_rows.createOrReplaceTempView("r")
 
     val edf = spark.sql("SELECT vsubject.id AS src, vobject.id AS dst, predicate AS attr FROM r JOIN v AS vsubject ON r.subject=vsubject.id JOIN v AS vobject ON r.object=vobject.id")
 
