@@ -97,7 +97,7 @@ object IndexerMain {
     import spark.implicits._
     import org.apache.spark.sql.functions.{collect_set, struct}
 
-    val id_rows = sc.textFile(filename).filter(_.matches("^.*(_hashtags_text|entities_user_mentions_id|place_id).*$")).map(_.split('|')).filter(_.length>2)
+    val id_rows = sc.textFile(filename).filter(_.matches("^.*(_hashtags_text|entities_user_mentions_id|place_id|tweet_user_id).*$")).map(_.split('|')).filter(_.length>2)
     val attr_rows = sc.textFile(filename).filter(_.matches("^.*(tweet_text|tweet_user_screen_name|mentions_screen_name|user_screen_name|place_name).*$")).map(_.split('|')).filter(_.length>2)
 
     val ids = id_rows.map(_(0)).union(id_rows.map(_(2))).distinct()
