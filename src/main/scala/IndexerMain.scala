@@ -100,20 +100,37 @@ object IndexerMain {
 
   def readRdfDf(spark: SparkSession, filename: String): GraphFrame = {
     val sc: SparkContext = spark.sparkContext
+    import spark.implicits._
+    import org.apache.spark.sql.functions.{collect_list, struct}
 
-    val r = sc.textFile(filename).filter(_.matches("^.*(_hashtags_text|mentions_id).*$")).map(_.split('|')).filter(_.length>2)
-    val v = r.map(_(0)).union(r.map(_(2))).distinct.zipWithIndex.map(
-      x => Row(x._2.toString, x._1.toString))
+    val id_rows = sc.textFile(filename).filter(_.matches("^.*(_hashtags_text|mentions_id|place_id).*$")).map(_.split('|')).filter(_.length>2)
+    val arg_rows = sc.textFile(filename).filter(_.matches("^.*(tweet_text|tweet_user_screen_name|mentions_screen_name|user_screen_name|).*$")).map(_.split('|')).filter(_.length>2)
 
-    //mentions
-    val m = sc.textFile(filename).filter(_.matches("^.*(_mentions_name).*$")).map(_.split('|')).filter(_.length>2)
+    val ids = id_rows.map(_(0)).union(id_rows.map(_(2))).distinct()
 
-    val stv = StructType(StructField("id", StringType) :: StructField("attr", StringType) :: Nil)
+    val attr_rows = sc.textFile(filename).filter(_.matches("^.*(_hashtags_text|mentions_id).*$")).map(_.split('|')).filter(_.length>2)
 
-    val vdf = spark.createDataFrame(v, stv)
+    val arg_df = arg_rows.map{case Array(a,b,c) =>
+      (a,b,c)}.toDF("id","key","value")
+    print(arg_df.count())
+    arg_df.dropDuplicates("id", "key")
+    print(arg_df.count())
 
+    val vdf = arg_df.groupBy($"id")
+      .agg(collect_list(struct($"key", $"value")).as("attr"))
+
+    vdf.show()
+
+//
+//    //mentions
+//    val m = sc.textFile(filename).filter(_.matches("^.*(_mentions_name).*$")).map(_.split('|')).filter(_.length>2)
+//
+//    val stv = StructType(StructField("id", StringType) :: StructField("attr", StringType) :: Nil)
+//
+//    val vdf = spark.createDataFrame(v, stv)
+//
     vdf.createOrReplaceTempView("v")
-
+//
     val str = StructType(
       StructField("subject", StringType) ::
       StructField("predicate", StringType) ::
@@ -121,10 +138,10 @@ object IndexerMain {
         Nil
     )
 
-    spark.createDataFrame(r.map(Row.fromSeq(_)), str)
+    spark.createDataFrame(id_rows.map(Row.fromSeq(_)), str)
       .createOrReplaceTempView("r")
 
-    val edf = spark.sql("SELECT vsubject.id AS src, vobject.id AS dst, predicate AS attr FROM r JOIN v AS vsubject ON r.subject=vsubject.attr JOIN v AS vobject ON r.object=vobject.attr")
+    val edf = spark.sql("SELECT vsubject.id AS src, vobject.id AS dst, predicate AS attr FROM r JOIN v AS vsubject ON r.subject=vsubject.id JOIN v AS vobject ON r.object=vobject.id")
 
     GraphFrame(vdf, edf)
 
