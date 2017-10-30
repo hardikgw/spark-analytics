@@ -98,22 +98,24 @@ object IndexerMain {
     import org.apache.spark.sql.functions.{collect_set, struct}
 
     val id_rows = sc.textFile(filename).filter(_.matches("^.*(_hashtags_text|entities_user_mentions_id|place_id).*$")).map(_.split('|')).filter(_.length>2)
-    val arg_rows = sc.textFile(filename).filter(_.matches("^.*(tweet_text|tweet_user_screen_name|mentions_screen_name|user_screen_name).*$")).map(_.split('|')).filter(_.length>2)
+    val attr_rows = sc.textFile(filename).filter(_.matches("^.*(tweet_text|tweet_user_screen_name|mentions_screen_name|user_screen_name|place_name).*$")).map(_.split('|')).filter(_.length>2)
 
-    val arg_df = arg_rows.map{case Array(a,b,c) =>
+    val ids = id_rows.map(_(0)).union(id_rows.map(_(2))).distinct()
+
+    val ids_df = ids.map{case a => (a, "id", a)}.toDF("id", "key", "value")
+
+    val attr_df = attr_rows.map{case Array(a,b,c) =>
       (a,b.split("_").takeRight(2).mkString("_"), c)}.toDF("id","key","value")
 
-    val vdf = arg_df.groupBy($"id")
+    val vdf = ids_df.union(attr_df).groupBy($"id")
       .agg(collect_set(struct($"key", $"value")).as("attr"))
 
     vdf.createOrReplaceTempView("v")
 
-    val edges_rows = id_rows.map{case Array(a, b, c) =>
-      (a,b.split("_").takeRight(2).mkString("_"), c)}.toDF("subject","predicate","object")
+    val edf = id_rows.map{case Array(a, b, c) =>
+      (a,c, b.split("_").takeRight(2).mkString("_"))}.toDF("src","dst","attr")
 
-    edges_rows.createOrReplaceTempView("r")
-
-    val edf = spark.sql("SELECT vsubject.id AS src, vobject.id AS dst, predicate AS attr FROM r JOIN v AS vsubject ON r.subject=vsubject.id JOIN v AS vobject ON r.object=vobject.id")
+    edf.createOrReplaceTempView("r")
 
     GraphFrame(vdf, edf)
 
