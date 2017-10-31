@@ -1,6 +1,7 @@
 package main.scala
 
 import org.apache.spark.SparkContext
+import org.apache.spark.sql.functions.array_contains
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 import org.graphframes._
@@ -73,10 +74,19 @@ object IndexerMain {
   }
 
   def main(args: Array[String]) {
+    import org.apache.spark.sql.functions.{array_contains}
 
     val sc: SparkSession = getSparkSession
 
     val in = readRdfDf(sc, file)
+
+    val validValues = Set("something")
+
+    in.edges.show(false)
+
+    val ds = in.edges.filter(in.edges("attr").contains("mentionot"))
+
+    ds.show(false)
 
     in.edges.createOrReplaceTempView("e")
     in.vertices.createOrReplaceTempView("v")
@@ -95,20 +105,20 @@ object IndexerMain {
   def readRdfDf(spark: SparkSession, filename: String): GraphFrame = {
     val sc: SparkContext = spark.sparkContext
     import spark.implicits._
-    import org.apache.spark.sql.functions.{collect_set, struct}
+    import org.apache.spark.sql.functions.{collect_set}
 
     val id_rows = sc.textFile(filename).filter(_.matches("^.*(_hashtags_text|entities_user_mentions_id|place_id).*$")).map(_.split('|')).filter(_.length>2)
     val attr_rows = sc.textFile(filename).filter(_.matches("^.*(tweet_text|tweet_user_screen_name|mentions_screen_name|user_screen_name|place_name).*$")).map(_.split('|')).filter(_.length>2)
 
     val ids = id_rows.map(_(0)).union(id_rows.map(_(2))).distinct()
 
-    val ids_df = ids.map{case a => (a, "id", a)}.toDF("id", "key", "value")
+    val ids_df = ids.map{a => (a, "id:"+ a)}.toDF("id", "attr")
 
     val attr_df = attr_rows.map{case Array(a,b,c) =>
-      (a,b.split("_").takeRight(2).mkString("_"), c)}.toDF("id","key","value")
+      (a,b.split("_").takeRight(2).mkString("_") + ":" + c)}.toDF("id","attr")
 
     val vdf = ids_df.union(attr_df).groupBy($"id")
-      .agg(collect_set(struct($"key", $"value")).as("attr"))
+      .agg(collect_set("attr").as("attr"))
 
     vdf.createOrReplaceTempView("v")
 
