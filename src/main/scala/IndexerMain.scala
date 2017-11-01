@@ -74,16 +74,18 @@ object IndexerMain {
   }
 
   def main(args: Array[String]) {
-
     val sc: SparkSession = getSparkSession
+    import sc.implicits._
+    //    val arrayContains = udf( (col1: Int, col2: Seq[Int]) => if(col2.contains(col1) ) 1 else 0 )
 
     val in = readRdfDf(sc, file)
 
     // *** Experimental Start ***
-    import org.apache.spark.sql.functions.{array_contains}
-    val out: DataFrame = in.find("(a)-[e]->(b)")
+    import org.apache.spark.sql.functions.{collect_set, struct, array_contains}
+    val out: DataFrame = in.find("(a)-[ab]->(b); (a)-[ac]->(c)")
+    val filter = Array("tweet_text")
     out.show(false)
-    val filtered = out.filter(array_contains(out("a.attr"), "mention_id"))
+    val filtered = out.filter($"a.attr".like("%tweet%"))
     filtered.show(false)
     // *** Experimental End ***
 
@@ -105,27 +107,23 @@ object IndexerMain {
   def readRdfDf(spark: SparkSession, filename: String): GraphFrame = {
     val sc: SparkContext = spark.sparkContext
     import spark.implicits._
-    import org.apache.spark.sql.functions.{collect_set}
+    import org.apache.spark.sql.functions.{collect_set, struct}
 
     val id_rows = sc.textFile(filename).filter(_.matches("^.*(_hashtags_text|entities_user_mentions_id|place_id|tweet_user_id).*$")).map(_.split('|')).filter(_.length>2)
     val attr_rows = sc.textFile(filename).filter(_.matches("^.*(tweet_text|tweet_user_screen_name|mentions_screen_name|user_screen_name|place_name).*$")).map(_.split('|')).filter(_.length>2)
 
     val ids = id_rows.map(_(0)).union(id_rows.map(_(2))).distinct()
 
-    val ids_df = ids.map{a => (a, "id:"+ a)}.toDF("id", "attr")
+    val ids_df = ids.map{a => (a, "id")}.toDF("id", "attr")
 
     val attr_df = attr_rows.map{case Array(a,b,c) =>
-      (a,b.split("_").takeRight(3).mkString("_") + ":" + c)}.toDF("id","attr")
+      (a,b.split("_").takeRight(2).mkString("_")+ ":" + c)}.toDF("id","attr")
 
     val vdf = ids_df.union(attr_df).groupBy($"id")
       .agg(collect_set("attr").as("attr"))
 
-    vdf.createOrReplaceTempView("v")
-
     val edf = id_rows.map{case Array(a, b, c) =>
       (a,c, b.split("_").takeRight(2).mkString("_"))}.toDF("src","dst","attr")
-
-    edf.createOrReplaceTempView("r")
 
     GraphFrame(vdf, edf)
 
