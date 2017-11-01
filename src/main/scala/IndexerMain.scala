@@ -3,7 +3,7 @@ package main.scala
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.functions.array_contains
 import org.apache.spark.sql.types._
-import org.apache.spark.sql.{DataFrame, Row, SparkSession}
+import org.apache.spark.sql.{Column, DataFrame, Row, SparkSession}
 import org.graphframes._
 import spray.json.{JsArray, JsObject, JsString}
 import spray.json._
@@ -75,17 +75,15 @@ object IndexerMain {
 
   def main(args: Array[String]) {
     val sc: SparkSession = getSparkSession
-    import sc.implicits._
-    //    val arrayContains = udf( (col1: Int, col2: Seq[Int]) => if(col2.contains(col1) ) 1 else 0 )
-
     val in = readRdfDf(sc, file)
 
     // *** Experimental Start ***
-    import org.apache.spark.sql.functions.{collect_set, struct, array_contains}
     val out: DataFrame = in.find("(a)-[ab]->(b); (a)-[ac]->(c)")
-    val filter = Array("tweet_text")
-    out.show(false)
-    val filtered = out.filter($"a.attr".like("%tweet%"))
+    import sc.implicits._
+    import org.apache.spark.sql.functions.udf
+    val getString = udf((c:Seq[String]) => c.mkString("_"))
+
+    val filtered = out.filter($"ab.attr".contains("user_id"))
     filtered.show(false)
     // *** Experimental End ***
 
