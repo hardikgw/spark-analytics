@@ -83,7 +83,7 @@ object IndexerMain {
     import org.apache.spark.sql.functions.udf
     val getString = udf((c:Seq[String]) => c.mkString("_"))
 
-    val filtered = out.filter($"ab.attr".contains("user_id"))
+    val filtered = out.filter(getString($"ab.attr").contains("user_id"))
     filtered.show(false)
     // *** Experimental End ***
 
@@ -124,7 +124,6 @@ object IndexerMain {
       (a,c, b.split("_").takeRight(2).mkString("_"))}.toDF("src","dst","attr")
 
     GraphFrame(vdf, edf)
-
   }
 
   def initContextAndCreateGF: GraphFrame = {
