@@ -5,6 +5,9 @@ cut -f 3 yagoFacts_del.tsv | sort | uniq > yagoFactsPredicates.txt
 
 grep -E "<actedIn>|<directed>" yagoFacts.tsv > yagoFactMovies.tsv
 
+#cd /Users/hp/workbench/projects/docker-images/spark-hadoop-cluster
+#docker-compose up
+
 #docker exec master hdfs dfs -mkdir /data
 #cp /Users/hp/workbench/projects/gmu/spark-hin/src/main/resources/data/yago/yagoFacts.tsv data/master/data/.
 #docker exec master hdfs dfs -put data/yagoFacts.tsv /data/yagoFacts.tsv
