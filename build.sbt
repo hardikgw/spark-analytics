@@ -1,4 +1,4 @@
-name := "scala-spark"
+name := "spark-analytics"
 
 version := "0.1"
 
