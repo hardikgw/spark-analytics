@@ -9,7 +9,7 @@ import spray.json.{JsArray, JsObject, JsString}
 import spray.json._
 
 object IndexerMain {
-  val file = "/Users/hp/workbench/projects/gmu/tweets/2017100309.txt"
+  val file = "/Users/hp/workbench/data/tweets/2017100309.txt"
 //  val file = "src/main/resources/yagoFactInfluence.tsv"
 //  val file = "hdfs://master:9000/data/yagoFactInfluence.tsv"
   def getSparkSession: SparkSession = {
@@ -83,7 +83,7 @@ object IndexerMain {
     import org.apache.spark.sql.functions.udf
     val getString = udf((c:Seq[String]) => c.mkString("_"))
 
-    val filtered = out.filter(getString($"ab.attr").contains("user_id"))
+    val filtered = out.filter($"ab.attr".contains("user_id"))
     filtered.show(false)
     // *** Experimental End ***
 

@@ -8,17 +8,19 @@ import spray.json._
 
 import scala.io.Source.fromFile
 
-final case class GraphItems(edges:Edges, vertices:Vertices)
+final case class GraphItems(edges: Edges, vertices: Vertices)
+
 final case class Edges(src: String, dst: String, attrs: Map[String, String])
+
 final case class Vertices(id: String, attrs: Map[String, String])
 
-trait JsonSupport extends SprayJsonSupport with DefaultJsonProtocol{
+trait JsonSupport extends SprayJsonSupport with DefaultJsonProtocol {
 
 }
 
-class SparkService extends Directives with JsonSupport{
+class SparkService extends Directives with JsonSupport {
 
-  val route: Route = respondWithHeader(`Access-Control-Allow-Origin`.*){
+  val route: Route = respondWithHeader(`Access-Control-Allow-Origin`.*) {
     get {
       pathPrefix("graphframe") {
         pathPrefix("e") {
